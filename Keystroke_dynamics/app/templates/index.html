@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keystroke Dynamics</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: black;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #45626f;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        h1 {
+            text-align: center;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+            color: white; 
+        }
+        input[type="text"], textarea {
+            width: 95%;
+            padding: 10px;
+            margin-top: 5px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button.submit {
+            background-color: #92b6b68b;
+            color: white;
+        }
+        button.reset {
+            background-color: #7e9b99;
+            color: white;
+            margin-left: 10px;
+        }
+        .typed-char {
+            color: lime;
+        }
+        .mistyped-char {
+            color: red;
+        }
+        .remaining-char {
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="color: white;">Keystroke Dynamics</h1>
+        <form id="typingForm" action="/submit" method="post">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
+            
+            <div id="word">
+                {% for char in paragraph.split() %}
+                    <span class="remaining-char">{{ char }}</span>
+                {% endfor %}
+            </div>
+            <textarea id="paragraph" name="paragraph" rows="10" required autocomplete="off"></textarea>
+            
+            <div>
+                <center>
+                    <button type="submit" class="submit">Submit</button>
+                    <button type="button" class="reset" id="resetButton">Reset</button>
+                </center>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const wordElement = document.getElementById('word');
+            const typedText = document.getElementById('paragraph');
+            const resetButton = document.getElementById('resetButton');
+            const usernameInput = document.getElementById('username');
+
+            let typedChars = '';
+
+            function updateDisplay() {
+                const word = wordElement.innerText.trim();
+                let display = '';
+                for (let i = 0; i < word.length; i++) {
+                    if (i < typedChars.length) {
+                        if (typedChars[i] === word[i]) {
+                            display += `<span class="typed-char">${typedChars[i]}</span>`;
+                        } else {
+                            display += `<span class="mistyped-char">${word[i]}</span>`;
+                        }
+                    } else {
+                        display += `<span class="remaining-char">${word[i]}</span>`;
+                    }
+                }
+                wordElement.innerHTML = display;
+            }
+
+            document.addEventListener('keydown', function (event) {
+                if (event.target === typedText) {
+                    const typedChar = event.key;
+                    typedChars += typedChar;
+                    updateDisplay();
+                }
+            });
+
+            resetButton.addEventListener('click', function () {
+                // Save the current username
+                const currentUsername = usernameInput.value;
+
+                // Clear typed text
+                typedText.value = '';
+                typedChars = '';
+                updateDisplay();
+
+                // Fetch a new paragraph without reloading the page
+                fetch('/random_paragraph')
+                    .then(response => response.json())
+                    .then(data => {
+                        const newParagraph = data.paragraph;
+                        const wordHTML = newParagraph.split(' ').map(char => `<span class="remaining-char">${char}</span>`).join(' ');
+                        wordElement.innerHTML = wordHTML;
+                        // Set the textarea value to the new paragraph
+                        typedText.value = '';
+                    })
+                    .catch(error => console.error('Error:', error));
+            });
+
+            typedText.addEventListener('input', function () {
+                typedChars = typedText.value;
+                updateDisplay();
+            });
+
+            // Save the username when the page is loaded
+            usernameInput.value = localStorage.getItem('savedUsername') || ''; // Retrieve from local storage
+        });
+
+        // Save the username to local storage on input change
+        document.getElementById('username').addEventListener('input', function () {
+            localStorage.setItem('savedUsername', this.value);
+        });
+    </script>
+</body>
+</html>
