@@ -7,8 +7,10 @@ Keystroke-Based User Identification using Machine Learning.
 # 1. Use local server to host the website, this records username and paragraph
 python ./run.py
 
-# 2. 
+# 2. Extract features 
+python ./app/models/data_processing.py
 
-# 4. test typing and predict who is the typer
-python ./test.py
+# 3. Test the model
+python ./app/models/model.py
+
 ```
