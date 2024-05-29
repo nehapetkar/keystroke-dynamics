@@ -9,7 +9,16 @@ import json
 import pandas as pd
 
 random_paragraphs = [
-    "c write know however late each that with because that place nation only for each change form consider we would interest with world so order or run more open that large write turn never over open each over change still old take hold need give by consider line only leave while what set up",
+    "As we navigate through the vast expanse of the digital age, it's crucial to maintain a balance between technological advancements and ethical considerations. This ensures a sustainable and inclusive future for all.",
+    "The rapid evolution of artificial intelligence and machine learning is transforming industries at an unprecedented pace. Embracing these technologies responsibly will require robust frameworks and regulatory oversight.",
+    "Climate change remains one of the most pressing challenges of our time. It demands coordinated global efforts to reduce carbon emissions and promote sustainable development practices.",
+    "In the realm of quantum computing, researchers are breaking new ground with each passing day. The potential applications of quantum algorithms could revolutionize fields such as cryptography and material science.",
+    "As urbanization continues to accelerate, smart cities are emerging as a solution to enhance the quality of life. Integrating technology with urban planning can lead to more efficient and sustainable living environments.",
+    "In an ever-changing world where innovation drives progress, it's imperative to remember the importance of human connection and empathy. Balancing technological growth with social responsibility will lead to a more harmonious society.",
+    "Environmental sustainability and economic growth are not mutually exclusive. By investing in green technologies and renewable energy, we can create jobs and protect our planet for future generations.",
+    "As artificial intelligence becomes increasingly sophisticated, the challenge lies in guiding its development toward enhancing human capabilities rather than replacing them. Ethical AI can revolutionize industries while safeguarding individual autonomy.",
+    "Globalization has interconnected economies and cultures, fostering unprecedented collaboration and innovation. However, it also demands a renewed focus on cultural sensitivity and equitable resource distribution.",
+    "Renewable energy sources, such as solar and wind power, present viable alternatives to fossil fuels. Investing in these technologies can mitigate climate change and drive sustainable economic growth.",
 ]
 
 user_info = {}  # Dictionary to store user IDs and usernames
