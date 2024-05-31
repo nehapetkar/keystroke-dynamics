@@ -1,10 +1,8 @@
-# data_processing.py
-# convert json to dataframes and extracted features
-
 import pandas as pd
 import json
 import numpy as np
 
+# load data
 def load_data(filepath):
     def parse_json(column):
         try:
@@ -15,38 +13,38 @@ def load_data(filepath):
     df = pd.read_csv(filepath, converters={'keystroke_data': parse_json})
     return df
 
-def extract_dwell_times(keystrokes):
-    dwell_times = []
+# extract dwell time, flight time, press-press, release-release
+def extract_keystroke_features(keystrokes):
+    features = {}
     key_press_times = {}
+    previous_release_time = None
+    previous_key = None
 
     for event in keystrokes:
         key = event['key']
         time = event['time']
-        if event['event'] == 'p':  # key press
-            key_press_times[key] = time
-        elif event['event'] == 'r':  # key release
-            if key in key_press_times:
-                dwell_time = time - key_press_times[key]
-                dwell_times.append(dwell_time)
-                del key_press_times[key]
-    
-    return dwell_times
+        event_type = event['event']
 
-def aggregate_features(dwell_times):
-    if len(dwell_times) == 0:
-        return {
-            'mean_dwell_time': np.nan,
-            'std_dwell_time': np.nan,
-            'min_dwell_time': np.nan,
-            'max_dwell_time': np.nan,
-        }
-    
-    return {
-        'mean_dwell_time': np.mean(dwell_times),
-        'std_dwell_time': np.std(dwell_times),
-        'min_dwell_time': np.min(dwell_times),
-        'max_dwell_time': np.max(dwell_times),
-    }
+        if event_type == 'p':  # key press
+            key_press_times[key] = time
+            features[f'{key}_press_time'] = time
+
+            if previous_release_time is not None:
+                features[f'{previous_key}_to_{key}_flight_time'] = time - previous_release_time
+
+        elif event_type == 'r':  # key release
+            if key in key_press_times:
+                press_time = key_press_times[key]
+                duration = time - press_time
+                features[f'{key}_release_time'] = time
+                features[f'{key}_dwell_time'] = duration
+                if previous_key is not None:
+                    features[f'{previous_key}_to_{key}_press_press_time'] = press_time - key_press_times[previous_key]
+                    features[f'{previous_key}_to_{key}_release_release_time'] = time - previous_release_time
+                previous_release_time = time
+                previous_key = key
+
+    return features
 
 def process_keystrokes(filepath):
     # Load the CSV data
@@ -67,14 +65,11 @@ def process_keystrokes(filepath):
         user_data = row.to_dict()
         keystrokes = user_data.pop('keystroke_data')
 
-        # Extract dwell times
-        dwell_times = extract_dwell_times(keystrokes)
+        # Extract keystroke features
+        keystroke_features = extract_keystroke_features(keystrokes)
 
-        # Aggregate dwell time features
-        dwell_features = aggregate_features(dwell_times)
-
-        # Create a new row with original data and dwell time features
-        feature_row = {**user_data, **dwell_features}
+        # Create a new row with original data and keystroke features
+        feature_row = {**user_data, **keystroke_features}
         
         # Append the new row to the list
         features_data.append(feature_row)

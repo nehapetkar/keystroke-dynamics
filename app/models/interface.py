@@ -1,8 +1,11 @@
+# interface.py
+
 import json
 import joblib
 import pandas as pd
 from pynput import keyboard
 import time
+from sklearn.metrics import accuracy_score
 
 # Load the trained model
 model_path = 'data/models/rf_classifier.pkl'
@@ -65,29 +68,51 @@ def extract_dwell_times(keystrokes):
     return dwell_times
 
 def main():
-    print("Please type the following paragraph and press ESC when done:")
-    print("The quick brown fox jumps over the lazy dog.")
+    actual_users = []
+    predicted_users = []
+    
+    while True:
+        actual_user = input("Enter the actual user (or type 'exit' to quit): ")
+        if actual_user.lower() == 'exit':
+            break
 
-    # Capture keystrokes
-    capture_keystrokes()
+        print("Please type the following paragraph and press ESC when done:")
+        print("The quick brown fox jumps over the lazy dog.")
 
-    # Extract dwell times
-    dwell_times = extract_dwell_times(keystroke_data)
+        # Reset keystroke data
+        global keystroke_data
+        keystroke_data = []
 
-    # Aggregate features
-    features = {
-        'mean_dwell_time': [sum(dwell_times) / len(dwell_times)] if dwell_times else [0],
-        'std_dwell_time': [pd.Series(dwell_times).std()] if dwell_times else [0],
-        'min_dwell_time': [min(dwell_times)] if dwell_times else [0],
-        'max_dwell_time': [max(dwell_times)] if dwell_times else [0],
-    }
+        # Capture keystrokes
+        capture_keystrokes()
 
-    # Create DataFrame
-    df_features = pd.DataFrame(features)
+        # Extract dwell times
+        dwell_times = extract_dwell_times(keystroke_data)
 
-    # Predict user
-    user_prediction = rf_classifier.predict(df_features)
-    print(f"\nAuthenticated user: {user_prediction[0]}")
+        # Aggregate features
+        features = {
+            'mean_dwell_time': [sum(dwell_times) / len(dwell_times)] if dwell_times else [0],
+            'std_dwell_time': [pd.Series(dwell_times).std()] if dwell_times else [0],
+            'min_dwell_time': [min(dwell_times)] if dwell_times else [0],
+            'max_dwell_time': [max(dwell_times)] if dwell_times else [0],
+        }
+
+        # Create DataFrame
+        df_features = pd.DataFrame(features)
+
+        # Predict user
+        user_prediction = rf_classifier.predict(df_features)
+        predicted_user = user_prediction[0]
+        print(f"\nAuthenticated user: {predicted_user}")
+
+        # Append results for evaluation
+        actual_users.append(actual_user)
+        predicted_users.append(predicted_user)
+
+    # Evaluate model performance
+    if actual_users:
+        accuracy = accuracy_score(actual_users, predicted_users)
+        print(f"Model Accuracy: {accuracy}")
 
 if __name__ == "__main__":
     main()
