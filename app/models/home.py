@@ -10,7 +10,8 @@ import pandas as pd
 
 # random paragraphs 
 random_paragraphs = [
-   "hypothetically"
+   "A good way to increase your typing speed is to type easy sentences over and over. That will help you to type smoothly without pausing. Try taking a typing speed test before and after to see for yourself. You can even work through this section multiple times and then track your progress.",
+   "Keystroke dynamics analyzes typing rhythm to identify users based on unique typing patterns. It offers continuous authentication using timing and pressure of keystrokes."
 ]
 
 
@@ -28,7 +29,7 @@ def load_user_info():
                 user_info[row[0]] = row[1].lower()
     except FileNotFoundError:
         # If file does not exist, create it
-        with open('data/raw/data.csv', 'w', newline='') as csvfile:
+        with open('data/raw/data1.csv', 'w', newline='') as csvfile:
             pass
 
 load_user_info()

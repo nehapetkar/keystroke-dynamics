@@ -1,118 +1,67 @@
-# interface.py
-
-import json
-import joblib
+import numpy as np
 import pandas as pd
-from pynput import keyboard
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+import pickle
 import time
-from sklearn.metrics import accuracy_score
 
-# Load the trained model
-model_path = 'data/models/rf_classifier.pkl'
-rf_classifier = joblib.load(model_path)
+# Load the trained model from the pickle file
+model_filename = r'app/models/random_forest_model.pkl'
+with open(model_filename, 'rb') as file:
+    trained_model = pickle.load(file)
 
-# Initialize data collection variables
-keystroke_data = []
-start_time = None
+# Load label encoder classes
+label_encoder = LabelEncoder()
+label_encoder_classes = np.load(r'app/models/label_encoder_classes.npy', allow_pickle=True)
+label_encoder.classes_ = label_encoder_classes
 
-def on_press(key):
-    global start_time
-    try:
-        if start_time is None:
-            start_time = time.time()
-        if hasattr(key, 'char'):
-            keystroke_data.append({'key': key.char, 'time': time.time() - start_time, 'event': 'p'})
-            print(key.char, end='', flush=True)
-        elif key == keyboard.Key.space:
-            keystroke_data.append({'key': 'space', 'time': time.time() - start_time, 'event': 'p'})
-            print(' ', end='', flush=True)
-        elif key == keyboard.Key.backspace:
-            keystroke_data.append({'key': 'backspace', 'time': time.time() - start_time, 'event': 'p'})
-            print('\b \b', end='', flush=True)  # Simulate backspace in terminal
-    except AttributeError:
-        pass
+# Load scaler used during training
+scaler_filename = r'app/models/scaler.pkl'
+with open(scaler_filename, 'rb') as file:
+    scaler = pickle.load(file)
 
-def on_release(key):
-    global start_time
-    try:
-        if hasattr(key, 'char'):
-            keystroke_data.append({'key': key.char, 'time': time.time() - start_time, 'event': 'r'})
-        elif key == keyboard.Key.space:
-            keystroke_data.append({'key': 'space', 'time': time.time() - start_time, 'event': 'r'})
-        elif key == keyboard.Key.backspace:
-            keystroke_data.append({'key': 'backspace', 'time': time.time() - start_time, 'event': 'r'})
-    except AttributeError:
-        pass
-    if key == keyboard.Key.esc:
-        return False
-
-def capture_keystrokes():
-    with keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
-        listener.join()
-
-def extract_dwell_times(keystrokes):
-    dwell_times = []
-    key_press_times = {}
-
-    for event in keystrokes:
-        key = event['key']
-        time = event['time']
-        if event['event'] == 'p':
-            key_press_times[key] = time
-        elif event['event'] == 'r':
-            if key in key_press_times:
-                dwell_time = time - key_press_times[key]
-                dwell_times.append(dwell_time)
-                del key_press_times[key]
+# Function to preprocess the user input
+def preprocess_input(keystrokes):
+    from_keys = [keystrokes[i][0] for i in range(len(keystrokes) - 1)]
+    to_keys = [keystrokes[i + 1][0] for i in range(len(keystrokes) - 1)]
+    flight_times = [keystrokes[i + 1][1] for i in range(len(keystrokes) - 1)]
     
-    return dwell_times
-
-def main():
-    actual_users = []
-    predicted_users = []
+    from_keys_encoded = label_encoder.transform(from_keys)
+    to_keys_encoded = label_encoder.transform(to_keys)
     
-    while True:
-        actual_user = input("Enter the actual user (or type 'exit' to quit): ")
-        if actual_user.lower() == 'exit':
-            break
+    input_data = pd.DataFrame({
+        'from_key': from_keys_encoded,
+        'to_key': to_keys_encoded,
+        'flight_time': flight_times
+    })
+    
+    input_data_scaled = scaler.transform(input_data)
+    return input_data_scaled
 
-        print("Please type the following paragraph and press ESC when done:")
-        print("The quick brown fox jumps over the lazy dog.")
+# Input paragraph for reference
+reference_paragraph = "A good way to increase your typing speed is to type easy sentences over and over. That will help you to type smoothly without pausing. Try taking a typing speed test before and after to see for yourself. You can even work through this section multiple times and then track your progress.",
 
-        # Reset keystroke data
-        global keystroke_data
-        keystroke_data = []
+# Prompt the user to type the paragraph and capture keystrokes
+print("Please type the following paragraph:")
+print(reference_paragraph)
+print("\nStart typing:")
 
-        # Capture keystrokes
-        capture_keystrokes()
+start_time = time.time()
+user_input = input()
+end_time = time.time()
 
-        # Extract dwell times
-        dwell_times = extract_dwell_times(keystroke_data)
+# Calculate flight times
+keystrokes = [(char, (end_time - start_time) / len(user_input)) for char in user_input]
 
-        # Aggregate features
-        features = {
-            'mean_dwell_time': [sum(dwell_times) / len(dwell_times)] if dwell_times else [0],
-            'std_dwell_time': [pd.Series(dwell_times).std()] if dwell_times else [0],
-            'min_dwell_time': [min(dwell_times)] if dwell_times else [0],
-            'max_dwell_time': [max(dwell_times)] if dwell_times else [0],
-        }
+# Preprocess the input data
+input_data = preprocess_input(keystrokes)
 
-        # Create DataFrame
-        df_features = pd.DataFrame(features)
+# Predict the user based on the input
+predicted_user = trained_model.predict(input_data)
 
-        # Predict user
-        user_prediction = rf_classifier.predict(df_features)
-        predicted_user = user_prediction[0]
-        print(f"\nAuthenticated user: {predicted_user}")
+# Print predicted user and check predictions
+print("Predicted User:", predicted_user[0])
 
-        # Append results for evaluation
-        actual_users.append(actual_user)
-        predicted_users.append(predicted_user)
-
-    # Evaluate model performance
-    if actual_users:
-        accuracy = accuracy_score(actual_users, predicted_users)
-        print(f"Model Accuracy: {accuracy}")
-
-if __name__ == "__main__":
-    main()
+# Debugging: Print the distribution of predictions
+unique, counts = np.unique(predicted_user, return_counts=True)
+prediction_distribution = dict(zip(unique, counts))
+print("Prediction Distribution:", prediction_distribution)
