@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keystroke Dynamics</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+<body>
+    <div class="container">
+        <h1>Keystroke Dynamics</h1>
+        <form id="typingForm">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
+
+            <div id="paragraphDisplay">
+                <span class="remaining-char">{{ paragraph }}</span>
+            </div>
+            <textarea id="typedText" name="typedText" rows="10" required autocomplete="off"></textarea>
+            <input type="hidden" id="paragraph" name="paragraph" value="{{ paragraph }}">
+
+            <div>
+                <center>
+                    <button type="submit" class="submit">Submit</button>
+                    <button type="button" class="reset" id="resetButton">Reset</button>
+                </center>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const paragraphDisplay = document.getElementById('paragraphDisplay');
+            const typedText = document.getElementById('typedText');
+            const resetButton = document.getElementById('resetButton');
+            const usernameInput = document.getElementById('username');
+            const typingForm = document.getElementById('typingForm');
+            const paragraphInput = document.getElementById('paragraph');
+
+            let keystrokes = [];
+
+            function updateDisplay() {
+                const paragraph = paragraphInput.value;
+                let display = '';
+                for (let i = 0; i < paragraph.length; i++) {
+                    if (i < typedText.value.length) {
+                        if (typedText.value[i] === paragraph[i]) {
+                            display += `<span class="typed-char">${typedText.value[i]}</span>`;
+                        } else {
+                            display += `<span class="mistyped-char">${paragraph[i]}</span>`;
+                        }
+                    } else {
+                        display += `<span class="remaining-char">${paragraph[i]}</span>`;
+                    }
+                }
+                paragraphDisplay.innerHTML = display;
+            }
+
+            typedText.addEventListener('keydown', function (event) {
+                let timestamp = Date.now();
+                keystrokes.push({ time: timestamp, key: event.key, event: 'p' });
+            });
+
+            typedText.addEventListener('keyup', function (event) {
+                let timestamp = Date.now();
+                keystrokes.push({ time: timestamp, key: event.key, event: 'r' });
+                updateDisplay();
+            });
+
+            resetButton.addEventListener('click', function () {
+                const currentUsername = usernameInput.value;
+                typedText.value = '';
+                keystrokes = [];
+                updateDisplay();
+
+                fetch('/random_paragraph')
+                    .then(response => response.json())
+                    .then(data => {
+                        paragraphInput.value = data.paragraph;
+                        updateDisplay();
+                    })
+                    .catch(error => console.error('Error:', error));
+            });
+
+            typingForm.addEventListener('submit', function (event) {
+                event.preventDefault();
+                const formData = new FormData();
+                formData.append('username', usernameInput.value);
+                formData.append('keystrokes', JSON.stringify(keystrokes));
+                formData.append('paragraph', paragraphInput.value);
+
+                fetch('/submit', {
+                    method: 'POST',
+                    body: formData
+                }).then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                }).catch(error => {
+                    console.error('Error:', error);
+                });
+            });
+
+            usernameInput.value = localStorage.getItem('savedUsername') || '';
+            usernameInput.addEventListener('input', function () {
+                localStorage.setItem('savedUsername', this.value);
+            });
+        });
+    </script>
+</body>
+</html>
