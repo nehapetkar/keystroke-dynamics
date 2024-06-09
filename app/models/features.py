@@ -52,5 +52,5 @@ def convert_to_desired_format(input_file, output_file):
             output_row = [user_id] + times
             writer.writerow(output_row)
 
-# Example usage:
 convert_to_desired_format('data/data1.csv', 'data/train.csv')
+convert_to_desired_format('data/test_data.csv', 'data/test_extracted.csv')
