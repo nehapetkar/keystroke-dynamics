@@ -1,25 +1,30 @@
-<!-- index.html -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Train Page</title>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
-
+    <title>Keystroke Dynamics</title>
+    <link rel="stylesheet" type="text/css" href="static/style.css">
+    <style>
+        .typed-char {
+            color: yellow;
+        }
+        .mistyped-char {
+            color: red;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
         <h1>Keystroke Dynamics</h1>
-        <h1>Train User</h1>
+        <h1>Test User</h1>
 
         <form id="typingForm">
             <label for="username">Username:</label>
             <input type="text" id="username" name="username" required>
 
             <div id="paragraphDisplay">
-                <span class="remaining-char">{{ paragraph }}</span>
+                <span class="remaining-char">united states</span>
             </div>
             <textarea id="typedText" name="typedText" rows="10" required autocomplete="off"></textarea>
             <input type="hidden" id="paragraph" name="paragraph" value="{{ paragraph }}">
@@ -27,8 +32,7 @@
             <div>
                 <center>
                     <button type="submit" class="submit">Submit</button>
-                    <button type="button" class="reset" id="resetButton">Reset</button>
-                    <button type="button" class="test" id="testButton"><a href="test_page.html" style="color: black;">Test Page</a></button>
+                    <button type="button" class="train" id="trainButton">Train Page</button>
                 </center>
             </div>
         </form>
@@ -38,10 +42,10 @@
         document.addEventListener('DOMContentLoaded', function () {
             const paragraphDisplay = document.getElementById('paragraphDisplay');
             const typedText = document.getElementById('typedText');
-            const resetButton = document.getElementById('resetButton');
             const usernameInput = document.getElementById('username');
             const typingForm = document.getElementById('typingForm');
             const paragraphInput = document.getElementById('paragraph');
+            const trainButton = document.getElementById('trainButton');
 
             let keystrokes = [];
 
@@ -73,19 +77,8 @@
                 updateDisplay();
             });
 
-            resetButton.addEventListener('click', function () {
-                const currentUsername = usernameInput.value;
-                typedText.value = '';
-                keystrokes = [];
-                updateDisplay();
-
-                fetch('/random_paragraph')
-                    .then(response => response.json())
-                    .then(data => {
-                        paragraphInput.value = data.paragraph;
-                        updateDisplay();
-                    })
-                    .catch(error => console.error('Error:', error));
+            trainButton.addEventListener('click', function () {
+                window.location.href = '/'; // Redirect to the index.html page
             });
 
             typingForm.addEventListener('submit', function (event) {
@@ -95,7 +88,7 @@
                 formData.append('keystrokes', JSON.stringify(keystrokes));
                 formData.append('paragraph', paragraphInput.value);
 
-                fetch('/submit', {
+                fetch('/submit_test', {
                     method: 'POST',
                     body: formData
                 }).then(response => response.json())
